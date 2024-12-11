@@ -105,3 +105,9 @@ async def trick(ctx):
     points = random.randint(5, 20)
     user_data[user_id]["points"] += points
     await ctx.send(f'You performed a trick and earned {points} points! Total points: {user_data[user_id]["points"]}')
+    
+    # Get the token from the environment variable
+token = os.getenv("DISCORD_TOKEN")
+if token is None:
+    raise ValueError("No DISCORD_TOKEN found in environment variables.")
+bot.run(token)
