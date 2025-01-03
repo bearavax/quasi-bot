@@ -80,33 +80,41 @@ async def trivia(ctx):
         await ctx.send(f'Snowboarding Fact: {fact}')
 
 @bot.command()
-async def snowboard(ctx):
-    user_id = ctx.author.id
-    if user_id not in user_data:
-        user_data[user_id] = {"points": 0, "achievements": [], "items": []}
-    await ctx.send('You are now snowboarding! Type `!jump` to jump over obstacles and `!trick` to perform tricks.')
-
-@bot.command()
 async def jump(ctx):
     user_id = ctx.author.id
     if user_id not in user_data:
-        await ctx.send('You need to start snowboarding first by typing `!snowboard`.')
+        user_data[user_id] = {"points": 0, "achievements": [], "items": [], "last_jump": None}
+    
+    last_jump = user_data[user_id]["last_jump"]
+    if last_jump and (discord.utils.utcnow() - last_jump).total_seconds() < 600:
+        await ctx.send('You need to wait 10 minutes before jumping again.')
         return
+    
+    user_data[user_id]["last_jump"] = discord.utils.utcnow()
     points = random.randint(1, 10)
     user_data[user_id]["points"] += points
     await ctx.send(f'You jumped over an obstacle and earned {points} points! Total points: {user_data[user_id]["points"]}')
+    await ctx.send('You have 10 seconds to perform tricks before landing. Type `!trick` to perform tricks.')
+
+    await asyncio.sleep(10)
+    await ctx.send('You have landed!')
 
 @bot.command()
 async def trick(ctx):
     user_id = ctx.author.id
-    if user_id not in user_data:
-        await ctx.send('You need to start snowboarding first by typing `!snowboard`.')
+    if user_id not in user_data or user_data[user_id]["last_jump"] is None:
+        await ctx.send('You need to jump first by typing `!jump`.')
         return
+    
+    if (discord.utils.utcnow() - user_data[user_id]["last_jump"]).total_seconds() > 10:
+        await ctx.send('You can only perform tricks within 10 seconds after jumping.')
+        return
+    
     points = random.randint(5, 20)
     user_data[user_id]["points"] += points
     await ctx.send(f'You performed a trick and earned {points} points! Total points: {user_data[user_id]["points"]}')
-    
-    # Get the token from the environment variable
+
+# Get the token from the environment variable
 token = os.getenv("DISCORD_TOKEN")
 if token is None:
     raise ValueError("No DISCORD_TOKEN found in environment variables.")
